@@ -1,76 +1,42 @@
-# Heron Coding Challenge - File Classifier
-
-## Overview
-
-At Heron, we’re using AI to automate document processing workflows in financial services and beyond. Each day, we handle over 100,000 documents that need to be quickly identified and categorised before we can kick off the automations.
-
-This repository provides a basic endpoint for classifying files by their filenames. However, the current classifier has limitations when it comes to handling poorly named files, processing larger volumes, and adapting to new industries effectively.
-
-**Your task**: improve this classifier by adding features and optimisations to handle (1) poorly named files, (2) scaling to new industries, and (3) processing larger volumes of documents.
-
-This is a real-world challenge that allows you to demonstrate your approach to building innovative and scalable AI solutions. We’re excited to see what you come up with! Feel free to take it in any direction you like, but we suggest:
-
-
 ### Part 1: Enhancing the Classifier
+1. Some simple improvements can be made to this classifier:
+    -Extracting the text from files to have more data to find a match
+    -Using fuzzy matching to cover misspellings/spelling differences (e.g. license/licence)
+    -Using AI to identify document types
+    -Including the method used and confidence score in the response for tracking metrics
 
-- What are the limitations in the current classifier that's stopping it from scaling?
-- How might you extend the classifier with additional technologies, capabilities, or features?
+2. A pipeline for classification can be used, falling back to the next method if the previous method fails:
+    1. Fuzzy matching on the file name
+    2. Use fuzzy matching on file content
+    3. Use zero-shot classification on file content
+    4. If all previous methods fail, return unknown
 
+3. In order to extract text from files, PyPDF2 for pdfs and tesseract for image OCR are used. Further file types can easily be added later.
+
+4. Zero-shot classification with pre-trained models allows for easily introducing new document types and scaling to new industries. I am using BART-large MNLI for this scenario, however other models may be more suitable in future (e.g. multilingual support)
 
 ### Part 2: Productionising the Classifier 
+1. In order to handle larger volumes of documents, batch processing can be implemented to process multiple files in parallel
 
-- How can you ensure the classifier is robust and reliable in a production environment?
-- How can you deploy the classifier to make it accessible to other services and users?
+2. The app is containerised with Docker allowing for scaling up in production with Kubernetes
 
-We encourage you to be creative! Feel free to use any libraries, tools, services, models or frameworks of your choice
+### Usage
+1. Build and run using Docker Compose:
+```bash
+docker-compose up --build
+```
 
-### Possible Ideas / Suggestions
-- Train a classifier to categorize files based on the text content of a file
-- Generate synthetic data to train the classifier on documents from different industries
-- Detect file type and handle other file formats (e.g., Word, Excel)
-- Set up a CI/CD pipeline for automatic testing and deployment
-- Refactor the codebase to make it more maintainable and scalable
+2. Classify a single file:
+```bash
+curl -X POST -F 'file=@files/path_to_pdf.pdf' http://localhost:5000/classify_file
+```
 
-## Marking Criteria
-- **Functionality**: Does the classifier work as expected?
-- **Scalability**: Can the classifier scale to new industries and higher volumes?
-- **Maintainability**: Is the codebase well-structured and easy to maintain?
-- **Creativity**: Are there any innovative or creative solutions to the problem?
-- **Testing**: Are there tests to validate the service's functionality?
-- **Deployment**: Is the classifier ready for deployment in a production environment?
+3. Classify multiple files in batches:
+```bash
+curl -X POST -F 'files[]=@files/path_to_pdf.pdf' -F 'files[]=@files/path_to_jpg.jpg' -F 'files[]=@files/path_to_png.png' http://localhost:5000/classify_batch_files
+```
 
-
-## Getting Started
-1. Clone the repository:
-    ```shell
-    git clone <repository_url>
-    cd heron_classifier
-    ```
-
-2. Install dependencies:
-    ```shell
-    python -m venv venv
-    source venv/bin/activate
-    pip install -r requirements.txt
-    ```
-
-3. Run the Flask app:
-    ```shell
-    python -m src.app
-    ```
-
-4. Test the classifier using a tool like curl:
-    ```shell
-    curl -X POST -F 'file=@path_to_pdf.pdf' http://127.0.0.1:5000/classify_file
-    ```
-
-5. Run tests:
-   ```shell
-    pytest
-    ```
-
-## Submission
-
-Please aim to spend 3 hours on this challenge.
-
-Once completed, submit your solution by sharing a link to your forked repository. Please also provide a brief write-up of your ideas, approach, and any instructions needed to run your solution. 
+### Future Improvements
+    -Adding testing
+    -Using multiple classifiers instead of cascading may be more accurate (covering false positives such as misnamed files)
+    -Implementing other document types such as excel sheets and docs
